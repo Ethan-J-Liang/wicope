@@ -84,7 +84,6 @@ int main(void)
     switch (in_command)
     {
       case START:
-
         wait = 1;
 
         // Check trigger activated or not
@@ -105,8 +104,14 @@ int main(void)
         // Enable timer
         sbi(TCCR1B, CS10);
 
+        // Wait to finish the acquisition of a whole ADC buffer or a new command from the host
         while (wait)
-          ; // Wait to finish the acquisition.
+        {
+          if (USART_is_read_ready())
+          {
+            break;
+          }
+        }
 
         // Send data to host
         USART_send_adc_buffer();
@@ -266,6 +271,11 @@ uint8_t USART_read(void)
   while (!(UCSR0A & _BV(RXC0)))
     ;
   return UDR0;
+}
+
+bool USART_is_read_ready(void)
+{
+  return (UCSR0A & _BV(RXC0));
 }
 
 void USART_send(uint8_t data)
